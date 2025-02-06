@@ -1,0 +1,33 @@
+{
+    "network": {
+        "clientIp": "127.0.0.1",
+        "receiverPort": 65000,
+        "senderPort": 65001,
+        "hostIp": "192.168.31.36",
+        "hostPort": 65002,
+        "cameraIp": "192.168.31.16",
+        "cameraPort": 65003,
+        "videoPort": 65004,
+        "serviceProgramPort": 65005,
+        "controlFromServiceProgramPort": 65006
+    },
+    "camera": {
+        "width": 640,
+        "height": 480
+    },
+    "bluetooth": {
+        "deviceName": "RigCom"
+    },
+    "files": {
+        "videoFile": "files/video.mp4",
+        "runScript": "scripts/run_video.py"
+    },
+    "log_files": {
+        "log1": "video.mp4.json"
+    },
+    "parameters": {
+        "filter_cutoff_freq": 50,
+        "calibration_size_buffer": 200,
+        "sigma_threshold": 4
+    }
+}
