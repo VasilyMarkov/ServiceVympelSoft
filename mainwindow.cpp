@@ -16,11 +16,6 @@
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
 
-std::vector<double> optimizer(std::vector<double> data) {
-
-}
-
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -32,24 +27,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     socket_ = std::make_unique<UdpSocket>();
-    socket_->setReceiverParameters(QHostAddress(configReader.get("network", "hostIp").toString()),
-                                   configReader.get("network", "serviceProgramPort").toInt());
-    socket_->setSenderParameters(QHostAddress(configReader.get("network", "cameraIp").toString()),
-                                   configReader.get("network", "controlFromServiceProgramPort").toInt());
+    socket_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()),
+                                   ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
+    socket_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
+                                   ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
 
     connect(socket_.get(), &UdpSocket::sendData, this, &MainWindow::receiveData);
     connect(this, &MainWindow::sendData, socket_.get(), &UdpSocket::receiveData);
-
-    auto processPath = fs::current_path().parent_path().parent_path();
-    processPath /= "prod";
-    processPath /= configReader.get("files", "runScript").toString().toStdString();
-
-    pythonCommandArguments_ = QStringList() << QString::fromStdString(processPath.string());
-    std::cout << processPath.string() << std::endl;
-
-    QObject::connect(&process_, &QProcess::readyReadStandardOutput, [this]() {
-         std::cout << process_.readAllStandardOutput().data() << std::endl;
-    });
 
     resize(1280, 720);
     plot = ui->plot;
@@ -80,7 +64,7 @@ void MainWindow::receiveData(const QJsonDocument& json)
     coreStatement_ = static_cast<CoreStatement>(json["statement"].toInt());
     modeEval(static_cast<EventType>(json["mode"].toInt()));
     if(coreStatement_ == CoreStatement::WORK) {
-        ui->temperature_label->setText(QString::number(temperature));
+//        ui->temperature_label->setText(QString::number(temperature));
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
         sample_++;

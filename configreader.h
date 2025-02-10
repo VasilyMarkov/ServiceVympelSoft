@@ -12,10 +12,7 @@
 #include <QDateTime>
 #include <QHash>
 #include <iostream>
-#include <filesystem>
 #include <exception>
-
-namespace fs = std::filesystem;
 
 class ConfigReader final
 {
@@ -34,10 +31,12 @@ public:
     }
 private:
     ConfigReader() {
-        auto configFilePath = fs::current_path().parent_path().parent_path();
-        configFilePath /= localPath_;
+        QDir configDir = QDir::current();
+        configDir.cdUp(); // Move to the parent directory
+        QString configFilePath = configDir.absoluteFilePath(localPath_);
 
-        QFile file(QString::fromStdString(configFilePath.string()));
+        QFile file(configFilePath);
+        qDebug() << configFilePath;
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             throw std::runtime_error("Could not open config file.");
         }
@@ -59,10 +58,8 @@ private:
     }
     ~ConfigReader(){}
 
-    const std::string localPath_ = "prod/conf/config.json";
+    QString localPath_ = "config.json";
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };
-
-inline auto&& configReader = ConfigReader::getInstance();
 
 #endif // CONFIGREADER_H
