@@ -57,8 +57,11 @@ private:
         }
     }
     ~ConfigReader(){}
-
+#ifdef _WIN32
+    QString localPath_ = "release/config.json";
+#elif __linux__
     QString localPath_ = "config.json";
+#endif
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };
 
