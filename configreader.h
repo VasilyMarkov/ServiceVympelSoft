@@ -32,11 +32,11 @@ public:
 private:
     ConfigReader() {
         QDir configDir = QDir::current();
-        configDir.cdUp(); // Move to the parent directory
+//        configDir.cdUp(); // Move to the parent directory
         QString configFilePath = configDir.filePath(localPath_);
 
         QFile file(configFilePath);
-        qDebug() << configFilePath;
+
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             throw std::runtime_error("Could not open config file.");
         }
@@ -58,7 +58,7 @@ private:
     }
     ~ConfigReader(){}
 
-    QString localPath_ = "ServiceVympelSoft/config.json";
+    QString localPath_ = "config.json";
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };
 

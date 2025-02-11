@@ -35,7 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     ui->host_ip_label->setText(hostIp.toString());
-
     socket_ = std::make_unique<UdpSocket>();
     socket_->setReceiverParameters(hostIp,
                                    ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
