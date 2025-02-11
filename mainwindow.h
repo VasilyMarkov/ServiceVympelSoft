@@ -59,6 +59,7 @@ Q_SIGNALS:
 private:
     void setupPlot(QCustomPlot*);
     void modeEval(EventType);
+    QHostAddress getOwnIp() const;
 private:
     Ui::MainWindow *ui;
     QProcess process_;

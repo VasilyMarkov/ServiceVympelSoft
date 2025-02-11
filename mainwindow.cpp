@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <QJsonObject>
+#include <QNetworkInterface>
 #include <algorithm>
 #include <deque>
 #include <queue>
@@ -26,8 +27,17 @@ MainWindow::MainWindow(QWidget *parent)
     })
 {
     ui->setupUi(this);
+
+    auto hostIp = getOwnIp();
+
+    if(hostIp.isNull()) {
+        hostIp = QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString());
+    }
+
+    ui->host_ip_label->setText(hostIp.toString());
+
     socket_ = std::make_unique<UdpSocket>();
-    socket_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()),
+    socket_->setReceiverParameters(hostIp,
                                    ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
     socket_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
                                    ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
@@ -99,6 +109,21 @@ void MainWindow::modeEval(EventType mode)
             ui->status->setText("IDLE");
         break;
     }
+}
+
+QHostAddress MainWindow::getOwnIp() const
+{
+    auto interfaces = QNetworkInterface::allInterfaces();
+    for(auto&& interface : interfaces) {
+        if(interface.flags().testFlag(QNetworkInterface::IsUp)) {
+            for(auto&& entry: interface.addressEntries()) {
+                if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol && !entry.ip().isLoopback()) {
+                    return entry.ip();
+                }
+            }
+        }
+    }
+    return QHostAddress::Null;
 }
 
 void MainWindow::mouseWheel()

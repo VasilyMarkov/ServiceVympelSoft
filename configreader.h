@@ -36,7 +36,7 @@ private:
         QString configFilePath = configDir.absoluteFilePath(localPath_);
 
         QFile file(configFilePath);
-        qDebug() << configFilePath;
+
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             throw std::runtime_error("Could not open config file.");
         }
