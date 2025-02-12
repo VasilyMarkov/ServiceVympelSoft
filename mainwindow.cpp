@@ -35,14 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     ui->host_ip_label->setText(hostIp.toString());
-    socket_ = std::make_unique<UdpSocket>();
-    socket_->setReceiverParameters(hostIp,
-                                   ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
-    socket_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
-                                   ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
-
-    connect(socket_.get(), &UdpSocket::sendData, this, &MainWindow::receiveData);
-    connect(this, &MainWindow::sendData, socket_.get(), &UdpSocket::receiveData);
 
     resize(1280, 720);
     plot = ui->plot;
@@ -58,6 +50,16 @@ MainWindow::MainWindow(QWidget *parent)
     plot->graph(1)->setPen(QPen(QColor(242, 65, 65), 2));
     plot->graph(0)->setName("brightness");
     plot->graph(1)->setName("filtered");
+
+    network_ = std::make_unique<Network>();
+    network_->setReceiverParameters(hostIp,
+                                   ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
+    network_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
+                                   ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
+    connect(network_.get(), &Network::sendData, this, &MainWindow::receiveData);
+    connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::receiveTCPConnection);
+    connect(network_.get(), &Network::tcpDisconnected, this, &MainWindow::tcpDisconnection);
+    connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData);
 }
 
 MainWindow::~MainWindow()
@@ -226,5 +228,21 @@ void MainWindow::on_fast_heating_button_clicked()
     QJsonObject json;
     json["statement"] = static_cast<int>(CoreStatement::FAST_HEATING);
     emit sendData(QJsonDocument(json));
+}
+
+
+void MainWindow::on_connect_button_clicked()
+{
+    network_->tcpConnect();
+}
+
+void MainWindow::receiveTCPConnection()
+{
+    ui->camera_connection_status->setStyleSheet(QString("QLabel")+normal_state);
+}
+
+void MainWindow::tcpDisconnection()
+{
+    ui->camera_connection_status->setStyleSheet(QString("QLabel")+crictical_state);
 }
 

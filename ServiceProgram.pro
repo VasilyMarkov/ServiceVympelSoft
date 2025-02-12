@@ -7,13 +7,13 @@ CONFIG += c++14
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    qcustomplot.cpp \
-    udp.cpp
+    network.cpp \
+    qcustomplot.cpp
 HEADERS += \
     configreader.h \
     mainwindow.h \
+    network.h \
     qcustomplot.h \
-    udp.h \
     utility.h
 
 FORMS += \

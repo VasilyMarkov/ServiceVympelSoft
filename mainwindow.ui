@@ -23,7 +23,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,2,3,1,0,0,6">
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,2,2,3,1,1,1,5">
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="0">
@@ -78,35 +78,27 @@
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="1">
-         <widget class="QLabel" name="mean_label">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Mean:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Std:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="std_label">
+         <widget class="QLabel" name="camera_connection_status">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QPushButton" name="connect_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Connect</string>
+        </property>
+       </widget>
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1">
