@@ -28,13 +28,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    auto hostIp = getOwnIp();
+//    auto hostIp = getOwnIp();
 
-    if(hostIp.isNull()) {
-        hostIp = QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString());
-    }
+//    if(hostIp.isNull()) {
+//        hostIp = QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString());
+//    }
 
-    ui->host_ip_label->setText(hostIp.toString());
+//    ui->host_ip_label->setText(hostIp.toString());
 
     resize(1280, 720);
     plot = ui->plot;
@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     plot->graph(1)->setName("filtered");
 
     network_ = std::make_unique<Network>();
-    network_->setReceiverParameters(hostIp,
+    network_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()),
                                    ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
     network_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
                                    ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
@@ -60,6 +60,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::receiveTCPConnection);
     connect(network_.get(), &Network::tcpDisconnected, this, &MainWindow::tcpDisconnection);
     connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData);
+
+    std::vector<double> coeffs = {1,0,0};
+    auto data = fitFunction(polinomial, coeffs, 0, 9);
+    qDebug() << QVector(std::begin(data), std::end(data));
 }
 
 MainWindow::~MainWindow()
@@ -74,8 +78,9 @@ void MainWindow::receiveData(const QJsonDocument& json)
     auto temperature = json["temperature"].toDouble();
     coreStatement_ = static_cast<CoreStatement>(json["statement"].toInt());
     modeEval(static_cast<EventType>(json["mode"].toInt()));
+    ui->temperature_label->setText(QString::number(temperature));
+    std::cout << filtered << std::endl;
     if(coreStatement_ == CoreStatement::WORK) {
-//        ui->temperature_label->setText(QString::number(temperature));
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
         sample_++;
@@ -190,6 +195,13 @@ void MainWindow::on_stopCV_clicked()
     emit sendData(QJsonDocument(json));
 }
 
+void MainWindow::on_setRate_button_clicked()
+{
+    QJsonObject json;
+    json["commands"] = static_cast<int>(Commands::setRateTemprature);
+    json["tempratureRate"] = QString(ui->temperatureRate->text()).toDouble();
+    emit sendData(QJsonDocument(json));
+}
 
 void MainWindow::on_startCV_clicked()
 {
@@ -197,39 +209,6 @@ void MainWindow::on_startCV_clicked()
     json["statement"] = static_cast<int>(CoreStatement::WORK);
     emit sendData(QJsonDocument(json));
 }
-
-
-void MainWindow::on_slow_cooling_button_clicked()
-{
-    QJsonObject json;
-    json["statement"] = static_cast<int>(CoreStatement::SLOW_COOLING);
-    emit sendData(QJsonDocument(json));
-}
-
-
-void MainWindow::on_slow_heating_button_clicked()
-{
-    QJsonObject json;
-    json["statement"] = static_cast<int>(CoreStatement::SLOW_HEATING);
-    emit sendData(QJsonDocument(json));
-}
-
-
-void MainWindow::on_fast_cooling_button_clicked()
-{
-    QJsonObject json;
-    json["statement"] = static_cast<int>(CoreStatement::FAST_COOLING);
-    emit sendData(QJsonDocument(json));
-}
-
-
-void MainWindow::on_fast_heating_button_clicked()
-{
-    QJsonObject json;
-    json["statement"] = static_cast<int>(CoreStatement::FAST_HEATING);
-    emit sendData(QJsonDocument(json));
-}
-
 
 void MainWindow::on_connect_button_clicked()
 {
@@ -245,4 +224,5 @@ void MainWindow::tcpDisconnection()
 {
     ui->camera_connection_status->setStyleSheet(QString("QLabel")+crictical_state);
 }
+
 

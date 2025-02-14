@@ -23,7 +23,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,2,2,3,1,1,1,5">
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,2,2,4,1,1,1,5">
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="0">
@@ -131,39 +131,41 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <layout class="QVBoxLayout" name="verticalLayout_4" stretch="3,2,2,3">
         <item>
          <widget class="QLabel" name="label_2">
+          <property name="font">
+           <font>
+            <pointsize>13</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
            <string>Hygrovision</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="slow_cooling_button">
+         <widget class="QLabel" name="label">
           <property name="text">
-           <string>Slow cooling</string>
+           <string>Temprature:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="slow_heating_button">
-          <property name="text">
-           <string>Slow heating</string>
-          </property>
-         </widget>
+         <widget class="QLineEdit" name="temperatureRate"/>
         </item>
         <item>
-         <widget class="QPushButton" name="fast_cooling_button">
-          <property name="text">
-           <string>Fast cooling</string>
+         <widget class="QPushButton" name="setRate_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="fast_heating_button">
           <property name="text">
-           <string>Fast heating</string>
+           <string>Set rate of change</string>
           </property>
          </widget>
         </item>
