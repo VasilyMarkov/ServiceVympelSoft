@@ -45,11 +45,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     plot->addGraph();
     plot->addGraph();
+    plot->addGraph();
 
     plot->graph(0)->setPen(QPen(QColor(82, 247, 79), 2));
     plot->graph(1)->setPen(QPen(QColor(242, 65, 65), 2));
+    plot->graph(2)->setPen(QPen(QColor(255, 255, 75), 2));
     plot->graph(0)->setName("brightness");
     plot->graph(1)->setName("filtered");
+    plot->graph(2)->setName("setTemperature");
 
     network_ = std::make_unique<Network>();
     network_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()),
@@ -76,13 +79,15 @@ void MainWindow::receiveData(const QJsonDocument& json)
     auto brightness = json["brightness"].toDouble();
     auto filtered = json["filtered"].toDouble();
     auto temperature = json["temperature"].toDouble();
-    coreStatement_ = static_cast<CoreStatement>(json["statement"].toInt());
+//    commands_ = static_cast<Commands>(json["commands"].toInt());
     modeEval(static_cast<EventType>(json["mode"].toInt()));
     ui->temperature_label->setText(QString::number(temperature));
     std::cout << filtered << std::endl;
-    if(coreStatement_ == CoreStatement::WORK) {
+
+    if(commands_ == Commands::work) {
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
+//        plot->graph(2)->addData(sample_, temperature*10e6);
         sample_++;
     }
     else {
@@ -191,7 +196,16 @@ void MainWindow::setupPlot(QCustomPlot* plot)
 void MainWindow::on_stopCV_clicked()
 {
     QJsonObject json;
-    json["statement"] = static_cast<int>(CoreStatement::HALT);
+    json["commands"] = static_cast<int>(Commands::halt);
+    commands_ = Commands::halt;
+    emit sendData(QJsonDocument(json));
+}
+
+void MainWindow::on_startCV_clicked()
+{
+    QJsonObject json;
+    json["commands"] = static_cast<int>(Commands::work);
+    commands_ = Commands::work;
     emit sendData(QJsonDocument(json));
 }
 
@@ -200,13 +214,6 @@ void MainWindow::on_setRate_button_clicked()
     QJsonObject json;
     json["commands"] = static_cast<int>(Commands::setRateTemprature);
     json["tempratureRate"] = QString(ui->temperatureRate->text()).toDouble();
-    emit sendData(QJsonDocument(json));
-}
-
-void MainWindow::on_startCV_clicked()
-{
-    QJsonObject json;
-    json["statement"] = static_cast<int>(CoreStatement::WORK);
     emit sendData(QJsonDocument(json));
 }
 

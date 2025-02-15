@@ -22,13 +22,10 @@ enum class EventType {
     END
 };
 
-enum class CoreStatement {
-    WORK,
-    HALT,
-};
-
 enum class Commands {
     no_commands,
+    halt,
+    work,
     setRateTemprature,
 };
 
@@ -102,7 +99,7 @@ private:
     std::unique_ptr<Network> network_;
     QCustomPlot* plot;
     std::unordered_map<EventType, QString> modes_;
-    CoreStatement coreStatement_;
     int sample_ = 0;
+    Commands commands_;
 };
 #endif // MAINWINDOW_H

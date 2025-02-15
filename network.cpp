@@ -15,7 +15,6 @@ Network::Network(QObject *parent): QObject(parent) {
 void Network::sendPortData(const QByteArray& data)
 {
     if(data.isEmpty()) return;
-
     socket_.writeDatagram(data, senderAddr_, senderPort_);
 }
 
