@@ -82,7 +82,7 @@ void MainWindow::receiveData(const QJsonDocument& json)
 //    commands_ = static_cast<Commands>(json["commands"].toInt());
     modeEval(static_cast<EventType>(json["mode"].toInt()));
     ui->temperature_label->setText(QString::number(temperature));
-    std::cout << filtered << std::endl;
+//    std::cout << filtered << std::endl;
 
     if(commands_ == Commands::work) {
         plot->graph(0)->addData(sample_, brightness);
