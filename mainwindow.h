@@ -50,7 +50,8 @@ inline std::vector<double> polinomial(const std::vector<double>& coeffs, const s
 
     for(auto&& x : x_data) {
         double tmp = 0.0;
-        for(size_t degree = coeffs.size() - 1; auto&& coeff : coeffs) {
+        size_t degree = coeffs.size() - 1;
+        for(auto&& coeff : coeffs) {
             tmp += coeff*std::pow(x, degree);
             --degree;
         }

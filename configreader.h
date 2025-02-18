@@ -12,6 +12,7 @@
 #include <QHash>
 #include <iostream>
 #include <exception>
+#include <memory>
 
 class ConfigReader final
 {
@@ -57,7 +58,7 @@ private:
     }
     ~ConfigReader(){}
 
-    QString localPath_ = "config.json";
+    QString localPath_ = "release/config.json";
 
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };

@@ -66,7 +66,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     std::vector<double> coeffs = {1,0,0};
     auto data = fitFunction(polinomial, coeffs, 0, 9);
-    qDebug() << QVector(std::begin(data), std::end(data));
 }
 
 MainWindow::~MainWindow()
@@ -124,17 +123,7 @@ void MainWindow::modeEval(EventType mode)
 
 QHostAddress MainWindow::getOwnIp() const
 {
-    auto interfaces = QNetworkInterface::allInterfaces();
-    for(auto&& interface : interfaces) {
-        if(interface.flags().testFlag(QNetworkInterface::IsUp)) {
-            for(auto&& entry: interface.addressEntries()) {
-                if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol && !entry.ip().isLoopback()) {
-                    return entry.ip();
-                }
-            }
-        }
-    }
-    return QHostAddress::Null;
+
 }
 
 void MainWindow::mouseWheel()
