@@ -58,7 +58,7 @@ private:
     }
     ~ConfigReader(){}
 
-    QString localPath_ = "release/config.json";
+    QString localPath_ = "config.json";
 
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };

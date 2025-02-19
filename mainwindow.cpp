@@ -28,20 +28,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-//    auto hostIp = getOwnIp();
-
-//    if(hostIp.isNull()) {
-//        hostIp = QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString());
-//    }
-
-//    ui->host_ip_label->setText(hostIp.toString());
-
     resize(1280, 720);
     plot = ui->plot;
     connect(plot, &QCustomPlot::mouseWheel, this, &MainWindow::mouseWheel);
     setupPlot(plot);
     plot->yAxis->setRange(-VALUE_SIZE, 5*VALUE_SIZE);
     plot->xAxis->setRange(0, frame_size);
+
+//    plot->yAxis->setRange(0, 5);
+//    plot->xAxis->setRange(0, 10);
+
 
     plot->addGraph();
     plot->addGraph();
@@ -64,8 +60,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(network_.get(), &Network::tcpDisconnected, this, &MainWindow::tcpDisconnection);
     connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData);
 
-    std::vector<double> coeffs = {1,0,0};
-    auto data = fitFunction(polinomial, coeffs, 0, 9);
+//    auto data = applyFunc({2, 4, 0.5, 1, 0.0, 0.0, 0.3, 0.0}, 0, 8, 1000, gaussPolyVal);
+
+//    auto x_data = QVector<double>::fromStdVector(data.first);
+//    auto y_data = QVector<double>::fromStdVector(data.second);
+
+//    plot->graph(2)->addData(x_data, y_data);
 }
 
 MainWindow::~MainWindow()
@@ -78,15 +78,12 @@ void MainWindow::receiveData(const QJsonDocument& json)
     auto brightness = json["brightness"].toDouble();
     auto filtered = json["filtered"].toDouble();
     auto temperature = json["temperature"].toDouble();
-//    commands_ = static_cast<Commands>(json["commands"].toInt());
     modeEval(static_cast<EventType>(json["mode"].toInt()));
     ui->temperature_label->setText(QString::number(temperature));
-//    std::cout << filtered << std::endl;
 
     if(commands_ == Commands::work) {
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
-//        plot->graph(2)->addData(sample_, temperature*10e6);
         sample_++;
     }
     else {
