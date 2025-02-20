@@ -3,13 +3,42 @@
 #include "configreader.h"
 
 
-Network::Network(QObject *parent): QObject(parent) {
-    connect(&socket_, &QUdpSocket::readyRead, this, &Network::receivePortData);
+Network::Network(QObject *parent):
+    QObject(parent),
+    cameraDiscoverSocket_(std::make_unique<QUdpSocket>()),
+    cameraDiscoverPort_(ConfigReader::getInstance().get("network", "cameraDiscoverPort").toInt())
+{
+    cameraDiscoverSocket_->bind(cameraDiscoverPort_, QUdpSocket::ShareAddress);
 
+    connect(cameraDiscoverSocket_.get(), &QUdpSocket::readyRead, this, &Network::processPendingDatagrams);
+    connect(&socket_, &QUdpSocket::readyRead, this, &Network::receivePortData);
     connect(&tcp_socket_, &QTcpSocket::readyRead, this, &Network::tcpHandler);
-    connect(&tcp_socket_, &QTcpSocket::disconnected, this, &Network::tcpDisconnect);
-    connect(&timer_, &QTimer::timeout, this, &Network::tcpDisconnect);
-    timer_.setInterval(5000);
+    connect(&tcp_socket_, &QTcpSocket::disconnected, this, &Network::tcpIsDisconnected);
+    connect(&tcp_socket_, &QTcpSocket::connected, this, &Network::tcpIsConnected);
+
+//    connect(&disconnectTimer_, &QTimer::timeout, this, &Network::tcpDisconnect);
+//    disconnectTimer_.setInterval(5000);
+}
+
+void Network::processPendingDatagrams()
+{
+    while (cameraDiscoverSocket_ && cameraDiscoverSocket_->hasPendingDatagrams()) {
+        QByteArray datagram;
+        datagram.resize(cameraDiscoverSocket_->pendingDatagramSize());
+        QHostAddress sender;
+        quint16 senderPort;
+        cameraDiscoverSocket_->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+        cameraIpAdress_ = sender;
+        createTcpConnection();
+    }
+}
+
+void Network::tcpDisconnectHandler()
+{
+    qDebug() << "Disconnected";
+    cameraIsConnected_ = false;
+    cameraDiscoverSocket_->bind(cameraDiscoverPort_, QUdpSocket::ShareAddress);
+    emit tcpIsDisconnected();
 }
 
 void Network::sendPortData(const QByteArray& data)
@@ -28,16 +57,21 @@ void Network::receivePortData()
 
 void Network::tcpHandler()
 {
-    auto message = QString(tcp_socket_.readAll());
-    if(message == "connected") {
-        timer_.start();
-        emit tcpIsConnected();
-    }
+//    auto message = QString(tcp_socket_.readAll());
+//    if(message == "connected") {
+//        disconnectTimer_.start();
+//        emit tcpIsConnected();
+//    }
 }
 
-void Network::tcpDisconnect()
+void Network::createTcpConnection()
 {
-    emit tcpDisconnected();
+    qDebug() << cameraIsConnected_;
+    if(cameraIsConnected_) return;
+
+//    cameraDiscoverSocket_->close();
+    tcp_socket_.connectToHost(cameraIpAdress_, ConfigReader::getInstance().get("network", "cameraTcpPort").toInt());
+    cameraIsConnected_ = true;
 }
 
 void Network::receiveData(const QJsonDocument& json) {
@@ -59,8 +93,3 @@ void Network::setReceiverParameters(const QHostAddress& receiverIp = QHostAddres
     socket_.bind(receiverIp, receiverPort);
 }
 
-void Network::tcpConnect()
-{
-    tcp_socket_.connectToHost(ConfigReader::getInstance().get("network", "cameraIp").toString(),
-                              ConfigReader::getInstance().get("network", "cameraTcpPort").toInt());
-}

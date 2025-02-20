@@ -17,14 +17,10 @@
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-    , modes_({
-        {EventType::IDLE, "idle"},
-        {EventType::CALIBRATION, "calibration"},
-        {EventType::MEASHUREMENT, "meashurement"}
-    })
+MainWindow::MainWindow(QWidget *parent):
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+
 {
     ui->setupUi(this);
 
@@ -34,10 +30,6 @@ MainWindow::MainWindow(QWidget *parent)
     setupPlot(plot);
     plot->yAxis->setRange(-VALUE_SIZE, 5*VALUE_SIZE);
     plot->xAxis->setRange(0, frame_size);
-
-//    plot->yAxis->setRange(0, 5);
-//    plot->xAxis->setRange(0, 10);
-
 
     plot->addGraph();
     plot->addGraph();
@@ -56,10 +48,13 @@ MainWindow::MainWindow(QWidget *parent)
     network_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
                                    ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
     connect(network_.get(), &Network::sendData, this, &MainWindow::receiveData);
-    connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::receiveTCPConnection);
-    connect(network_.get(), &Network::tcpDisconnected, this, &MainWindow::tcpDisconnection);
+    connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::tcpIsConnected);
+    connect(network_.get(), &Network::tcpIsDisconnected, this, &MainWindow::tcpIsDisconnected);
     connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData);
+    connect(this, &MainWindow::sendFuncParameters, this, &MainWindow::drawFunc);
 
+
+    ui->temperatureRate->setText(QString::number(0.0));
 //    auto data = applyFunc({2, 4, 0.5, 1, 0.0, 0.0, 0.3, 0.0}, 0, 8, 1000, gaussPolyVal);
 
 //    auto x_data = QVector<double>::fromStdVector(data.first);
@@ -75,16 +70,25 @@ MainWindow::~MainWindow()
 
 void MainWindow::receiveData(const QJsonDocument& json)
 {
-    auto brightness = json["brightness"].toDouble();
-    auto filtered = json["filtered"].toDouble();
-    auto temperature = json["temperature"].toDouble();
+    double brightness = json["brightness"].toDouble();
+    double filtered = json["filtered"].toDouble();
+    double temperature = json["temperature"].toDouble();
+    int bleStatus = json["bleStatus"].isNull() ? json["bleStatus"].toBool() : 3;
     modeEval(static_cast<EventType>(json["mode"].toInt()));
     ui->temperature_label->setText(QString::number(temperature));
 
+    if(bleStatus == 1) {
+        ui->ble_status->setStyleSheet(QString("QLabel")+normal_state);
+    }
+    if(bleStatus == 0) {
+        ui->ble_status->setStyleSheet(QString("QLabel")+crictical_state);
+    }
     if(commands_ == Commands::work) {
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
         sample_++;
+
+        getFuncParameters(json);
     }
     else {
         sample_ = 0;
@@ -118,9 +122,26 @@ void MainWindow::modeEval(EventType mode)
     }
 }
 
-QHostAddress MainWindow::getOwnIp() const
+void MainWindow::getFuncParameters(const QJsonDocument& json)
 {
+    if(json["isFuncParametersReady"].toBool() && firstCallEvaluateParameters_) {
+        firstCallEvaluateParameters_ = false;
 
+        auto jsonParameters = json["funcParameters"].toArray();
+        QVector<double> parameters;
+        parameters.reserve(jsonParameters.size());
+
+        for (const QJsonValue& value : jsonParameters) {
+            if (value.isDouble()) {
+                parameters.append(value.toDouble());
+            } else {
+                // Handle the case where the value is not a double
+                qWarning() << "Non-double value found in QJsonArray, skipping...";
+            }
+        }
+        emit sendFuncParameters(parameters);
+    }
+    emit sendFuncParameters({});
 }
 
 void MainWindow::mouseWheel()
@@ -203,19 +224,39 @@ void MainWindow::on_setRate_button_clicked()
     emit sendData(QJsonDocument(json));
 }
 
+void MainWindow::drawFunc(const QVector<double>& parameters)
+{
+    if(parameters.isEmpty()) return;
+
+    auto data = applyFunc(
+        std::vector<double>(std::begin(parameters), std::end(parameters)),
+        0,
+        sample_,
+        sample_*4,
+        gaussPolyVal
+    );
+
+    auto x_data = QVector<double>(std::begin(data.first), std::end(data.first));
+    auto y_data = QVector<double>(std::begin(data.first), std::end(data.second));
+
+    plot->graph(2)->addData(x_data, y_data);
+}
+
 void MainWindow::on_connect_button_clicked()
 {
-    network_->tcpConnect();
+
 }
 
-void MainWindow::receiveTCPConnection()
+void MainWindow::tcpIsConnected()
 {
     ui->camera_connection_status->setStyleSheet(QString("QLabel")+normal_state);
+    ui->camera_connection_status->setText("Camera is connected");
 }
 
-void MainWindow::tcpDisconnection()
+void MainWindow::tcpIsDisconnected()
 {
     ui->camera_connection_status->setStyleSheet(QString("QLabel")+crictical_state);
+    ui->camera_connection_status->setText("Camera is disconnected");
 }
 
 

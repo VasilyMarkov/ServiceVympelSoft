@@ -3,14 +3,12 @@
 
 #include <QMainWindow>
 #include <QUdpSocket>
-#include "qcustomplot.h"
 #include <QThread>
-#include <unordered_map>
 #include <deque>
-#include "network.h"
 #include <cmath>
 #include <iostream>
-
+#include "qcustomplot.h"
+#include "network.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -118,25 +116,28 @@ private slots:
 
     void on_setRate_button_clicked();
 
-Q_SIGNALS:
+    void drawFunc(const QVector<double>&);
+signals:
     void sendData(const QJsonDocument&);
+    void sendFuncParameters(const QVector<double>&);
 public slots:
-    void receiveTCPConnection();
-    void tcpDisconnection();
+    void tcpIsConnected();
+    void tcpIsDisconnected();
 private:
     void setupPlot(QCustomPlot*);
     void modeEval(EventType);
     QHostAddress getOwnIp() const;
-
+    void getFuncParameters(const QJsonDocument&);
 
 private:
     Ui::MainWindow *ui;
     QProcess process_;
     QStringList pythonCommandArguments_;
     std::unique_ptr<Network> network_;
+
     QCustomPlot* plot;
-    std::unordered_map<EventType, QString> modes_;
     int sample_ = 0;
     Commands commands_;
+    bool firstCallEvaluateParameters_ = true;
 };
 #endif // MAINWINDOW_H

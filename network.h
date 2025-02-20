@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <QTcpSocket>
+#include <QTcpServer>
 #include <QJsonDocument>
 #include <QTimer>
 
@@ -16,25 +17,33 @@ public:
     explicit Network(QObject *parent = nullptr);
     void setSenderParameters(const QHostAddress&, quint16);
     void setReceiverParameters(const QHostAddress&, quint16);
-    void tcpConnect();
 signals:
     void sendData(const QJsonDocument&);
+    void sendCameraIp(const QHostAddress&);
     void tcpIsConnected();
-    void tcpDisconnected();
+    void tcpIsDisconnected();
 private slots:
     void receivePortData();
     void tcpHandler();
-    void tcpDisconnect();
+    void createTcpConnection();
+    void processPendingDatagrams();
+    void tcpDisconnectHandler();
 public slots:
     void receiveData(const QJsonDocument&);
 private:
     void sendPortData(const QByteArray&);
-    QTimer timer_;
+    QTimer disconnectTimer_;
     bool firstConnected_ = true;
     QUdpSocket socket_;
+    std::unique_ptr<QUdpSocket> cameraDiscoverSocket_;
     QTcpSocket tcp_socket_;
     QHostAddress senderAddr_ = QHostAddress::LocalHost;
     quint16 senderPort_ = 1024;
+    quint16 cameraDiscoverPort_;
+    QHostAddress cameraIpAdress_;
+    bool cameraIsConnected_ = false;
 };
+
+
 
 #endif // NETWORK_H
