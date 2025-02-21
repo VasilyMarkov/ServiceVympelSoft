@@ -135,7 +135,6 @@ void MainWindow::getFuncParameters(const QJsonDocument& json)
             if (value.isDouble()) {
                 parameters.append(value.toDouble());
             } else {
-                // Handle the case where the value is not a double
                 qWarning() << "Non-double value found in QJsonArray, skipping...";
             }
         }
@@ -240,11 +239,6 @@ void MainWindow::drawFunc(const QVector<double>& parameters)
     auto y_data = QVector<double>(std::begin(data.first), std::end(data.second));
 
     plot->graph(2)->addData(x_data, y_data);
-}
-
-void MainWindow::on_connect_button_clicked()
-{
-
 }
 
 void MainWindow::tcpIsConnected()

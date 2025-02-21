@@ -27,11 +27,14 @@ private slots:
     void tcpHandler();
     void createTcpConnection();
     void processPendingDatagrams();
+    void tcpConnectHandler();
     void tcpDisconnectHandler();
 public slots:
     void receiveData(const QJsonDocument&);
 private:
     void sendPortData(const QByteArray&);
+    QHostAddress getOwnIp(const QHostAddress&);
+private:
     QTimer disconnectTimer_;
     bool firstConnected_ = true;
     QUdpSocket socket_;
@@ -41,6 +44,7 @@ private:
     quint16 senderPort_ = 1024;
     quint16 cameraDiscoverPort_;
     QHostAddress cameraIpAdress_;
+    QHostAddress ownIpAdress_;
     bool cameraIsConnected_ = false;
 };
 

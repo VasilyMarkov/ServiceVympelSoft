@@ -1,21 +1,22 @@
 #include "network.h"
 #include <iostream>
 #include "configreader.h"
-
+#include <QNetworkInterface>
+#include <QNetworkAddressEntry>
 
 Network::Network(QObject *parent):
     QObject(parent),
     cameraDiscoverSocket_(std::make_unique<QUdpSocket>()),
-    cameraDiscoverPort_(ConfigReader::getInstance().get("network", "cameraDiscoverPort").toInt())
+    cameraDiscoverPort_(ConfigReader::getInstance().get("network", "cameraDiscoverPort").toInt()),
+    ownIpAdress_(ConfigReader::getInstance().get("network", "hostIp").toString())
 {
     cameraDiscoverSocket_->bind(cameraDiscoverPort_, QUdpSocket::ShareAddress);
 
     connect(cameraDiscoverSocket_.get(), &QUdpSocket::readyRead, this, &Network::processPendingDatagrams);
     connect(&socket_, &QUdpSocket::readyRead, this, &Network::receivePortData);
     connect(&tcp_socket_, &QTcpSocket::readyRead, this, &Network::tcpHandler);
-    connect(&tcp_socket_, &QTcpSocket::disconnected, this, &Network::tcpIsDisconnected);
-    connect(&tcp_socket_, &QTcpSocket::connected, this, &Network::tcpIsConnected);
-
+    connect(&tcp_socket_, &QTcpSocket::connected, this, &Network::tcpConnectHandler);
+    connect(&tcp_socket_, &QTcpSocket::disconnected, this, &Network::tcpDisconnectHandler);
 //    connect(&disconnectTimer_, &QTimer::timeout, this, &Network::tcpDisconnect);
 //    disconnectTimer_.setInterval(5000);
 }
@@ -33,11 +34,18 @@ void Network::processPendingDatagrams()
     }
 }
 
+void Network::tcpConnectHandler()
+{
+    tcp_socket_.write(QByteArray(ownIpAdress_.toString().toUtf8()));
+    emit tcpIsConnected();
+}
+
 void Network::tcpDisconnectHandler()
 {
-    qDebug() << "Disconnected";
     cameraIsConnected_ = false;
-    cameraDiscoverSocket_->bind(cameraDiscoverPort_, QUdpSocket::ShareAddress);
+    if (cameraDiscoverSocket_->state() == QAbstractSocket::UnconnectedState) {
+        cameraDiscoverSocket_->bind(cameraDiscoverPort_, QUdpSocket::ShareAddress);
+    }
     emit tcpIsDisconnected();
 }
 
@@ -66,11 +74,12 @@ void Network::tcpHandler()
 
 void Network::createTcpConnection()
 {
-    qDebug() << cameraIsConnected_;
     if(cameraIsConnected_) return;
 
 //    cameraDiscoverSocket_->close();
     tcp_socket_.connectToHost(cameraIpAdress_, ConfigReader::getInstance().get("network", "cameraTcpPort").toInt());
+    ownIpAdress_ = getOwnIp(cameraIpAdress_);
+    qDebug() << ownIpAdress_;
     cameraIsConnected_ = true;
 }
 
@@ -93,3 +102,32 @@ void Network::setReceiverParameters(const QHostAddress& receiverIp = QHostAddres
     socket_.bind(receiverIp, receiverPort);
 }
 
+bool isInSameSubnet(const QHostAddress& ip, const QHostAddress& netmask, const QHostAddress& referenceIp) {
+    quint32 ipAddress = ip.toIPv4Address();
+    quint32 netmaskAddress = netmask.toIPv4Address();
+    quint32 referenceIpAddress = referenceIp.toIPv4Address();
+
+    // Apply the netmask to both IP addresses
+    quint32 network1 = ipAddress & netmaskAddress;
+    quint32 network2 = referenceIpAddress & netmaskAddress;
+
+    // Compare the network parts of both IP addresses
+    return network1 == network2;
+}
+
+QHostAddress Network::getOwnIp(const QHostAddress& referenceIp) {
+    auto interfaces = QNetworkInterface::allInterfaces();
+    for (const auto& interface : interfaces) {
+        if (interface.flags().testFlag(QNetworkInterface::IsUp)) {
+            for (const auto& entry : interface.addressEntries()) {
+                if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol && !entry.ip().isLoopback()) {
+                    // Check if the IP is in the same subnet as the reference IP
+                    if (isInSameSubnet(entry.ip(), entry.netmask(), referenceIp)) {
+                        return entry.ip();
+                    }
+                }
+            }
+        }
+    }
+    return QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString());
+}

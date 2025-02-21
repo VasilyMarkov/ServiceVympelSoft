@@ -112,8 +112,6 @@ private slots:
 
     void on_stopCV_clicked();
     void on_startCV_clicked();
-    void on_connect_button_clicked();
-
     void on_setRate_button_clicked();
 
     void drawFunc(const QVector<double>&);
@@ -126,7 +124,6 @@ public slots:
 private:
     void setupPlot(QCustomPlot*);
     void modeEval(EventType);
-    QHostAddress getOwnIp() const;
     void getFuncParameters(const QJsonDocument&);
 
 private:
