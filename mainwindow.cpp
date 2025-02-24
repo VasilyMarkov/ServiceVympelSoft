@@ -47,10 +47,7 @@ MainWindow::MainWindow(QWidget *parent):
     connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage);
 
     network_ = std::make_unique<Network>();
-    network_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()),
-                                   ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
-    network_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()),
-                                   ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
+
     connect(network_.get(), &Network::sendData, this, &MainWindow::receiveData);
     connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::tcpIsConnected);
     connect(network_.get(), &Network::tcpIsDisconnected, this, &MainWindow::tcpIsDisconnected);
@@ -80,7 +77,6 @@ void MainWindow::receiveData(const QJsonDocument& json)
     int bleStatus = json["bleStatus"].isNull() ? json["bleStatus"].toBool() : 3;
     modeEval(static_cast<EventType>(json["mode"].toInt()));
     ui->temperature_label->setText(QString::number(temperature));
-
     if(bleStatus == 1) {
         ui->ble_status->setStyleSheet(QString("QLabel")+normal_state);
     }

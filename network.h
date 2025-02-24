@@ -17,11 +17,13 @@ public:
     explicit Network(QObject *parent = nullptr);
     void setSenderParameters(const QHostAddress&, quint16);
     void setReceiverParameters(const QHostAddress&, quint16);
+    QHostAddress getCameraIp() const;
 signals:
     void sendData(const QJsonDocument&);
     void sendCameraIp(const QHostAddress&);
     void tcpIsConnected();
     void tcpIsDisconnected();
+    void ready();
 private slots:
     void receivePortData();
     void tcpHandler();

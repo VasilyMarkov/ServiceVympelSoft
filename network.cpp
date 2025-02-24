@@ -65,21 +65,19 @@ void Network::receivePortData()
 
 void Network::tcpHandler()
 {
-//    auto message = QString(tcp_socket_.readAll());
-//    if(message == "connected") {
-//        disconnectTimer_.start();
-//        emit tcpIsConnected();
-//    }
+
 }
 
 void Network::createTcpConnection()
 {
     if(cameraIsConnected_) return;
 
-//    cameraDiscoverSocket_->close();
     tcp_socket_.connectToHost(cameraIpAdress_, ConfigReader::getInstance().get("network", "cameraTcpPort").toInt());
     ownIpAdress_ = getOwnIp(cameraIpAdress_);
-    qDebug() << ownIpAdress_;
+    setReceiverParameters(ownIpAdress_,
+        ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
+    setSenderParameters(QHostAddress(cameraIpAdress_.toIPv4Address()),
+        ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
     cameraIsConnected_ = true;
 }
 
@@ -100,6 +98,11 @@ void Network::setReceiverParameters(const QHostAddress& receiverIp = QHostAddres
     if (receiverPort <= RESERVE_PORTS) throw std::runtime_error("Invalid receiver port");
 
     socket_.bind(receiverIp, receiverPort);
+}
+
+QHostAddress Network::getCameraIp() const
+{
+    return cameraIpAdress_;
 }
 
 bool isInSameSubnet(const QHostAddress& ip, const QHostAddress& netmask, const QHostAddress& referenceIp) {

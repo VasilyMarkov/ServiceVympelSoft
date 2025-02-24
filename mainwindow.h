@@ -121,6 +121,7 @@ private slots:
             QByteArray datagram;
             datagram.resize(udpSocket->pendingDatagramSize());
             udpSocket->readDatagram(datagram.data(), datagram.size());
+            if(datagram.isEmpty()) return;
 
             std::vector<uchar> buffer(datagram.begin(), datagram.end());
             cv::Mat frame = cv::imdecode(buffer, cv::IMREAD_COLOR);
