@@ -4,11 +4,16 @@
 #include <QMainWindow>
 #include <QUdpSocket>
 #include <QThread>
+#include <QImage>
+#include <QPixmap>
 #include <deque>
 #include <cmath>
 #include <iostream>
 #include "qcustomplot.h"
 #include "network.h"
+#include <opencv2/opencv.hpp>
+
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -98,6 +103,50 @@ std::pair<std::vector<double>,std::vector<double>>  applyFunc(
     return {x_data, y_data};
 }
 
+
+class VideoReceiver : public QObject {
+    Q_OBJECT
+
+public:
+    VideoReceiver(QLabel *label) : label(label) {
+        udpSocket = new QUdpSocket(this);
+        udpSocket->bind(QHostAddress::Any, 12345);
+        connect(udpSocket, &QUdpSocket::readyRead, this, &VideoReceiver::readDatagram);
+    }
+signals:
+    void sendImage(const QPixmap&);
+private slots:
+    void readDatagram() {
+        while (udpSocket->hasPendingDatagrams()) {
+            QByteArray datagram;
+            datagram.resize(udpSocket->pendingDatagramSize());
+            udpSocket->readDatagram(datagram.data(), datagram.size());
+
+            std::vector<uchar> buffer(datagram.begin(), datagram.end());
+            cv::Mat frame = cv::imdecode(buffer, cv::IMREAD_COLOR);
+
+            if (!frame.empty()) {
+                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+
+                QImage qimg(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
+
+                if (!qimg.isNull()) {
+
+                    emit sendImage(QPixmap::fromImage(qimg));
+                } else {
+                    qWarning() << "Failed to create QImage from frame.";
+                }
+            } else {
+                qWarning() << "Received empty or invalid frame.";
+            }
+        }
+    }
+
+private:
+    QUdpSocket *udpSocket;
+    QLabel *label;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -115,9 +164,11 @@ private slots:
     void on_setRate_button_clicked();
 
     void drawFunc(const QVector<double>&);
+    void receiveImage(const QPixmap&);
 signals:
     void sendData(const QJsonDocument&);
     void sendFuncParameters(const QVector<double>&);
+
 public slots:
     void tcpIsConnected();
     void tcpIsDisconnected();
@@ -131,7 +182,7 @@ private:
     QProcess process_;
     QStringList pythonCommandArguments_;
     std::unique_ptr<Network> network_;
-
+    std::unique_ptr<VideoReceiver> videoReceiver_;
     QCustomPlot* plot;
     int sample_ = 0;
     Commands commands_;

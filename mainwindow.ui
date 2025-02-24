@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>970</width>
-    <height>784</height>
+    <width>1148</width>
+    <height>759</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,1">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="8,1,4">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout" stretch="1">
       <item>
@@ -212,6 +212,22 @@
       </item>
      </layout>
     </item>
+    <item>
+     <widget class="QLabel" name="video_frame">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -219,7 +235,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>970</width>
+     <width>1148</width>
      <height>22</height>
     </rect>
    </property>

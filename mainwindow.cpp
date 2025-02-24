@@ -14,6 +14,7 @@
 #include <map>
 #include "configreader.h"
 
+
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
 
@@ -24,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent):
 {
     ui->setupUi(this);
 
-    resize(1280, 720);
+    showMaximized();
     plot = ui->plot;
     connect(plot, &QCustomPlot::mouseWheel, this, &MainWindow::mouseWheel);
     setupPlot(plot);
@@ -41,6 +42,9 @@ MainWindow::MainWindow(QWidget *parent):
     plot->graph(0)->setName("brightness");
     plot->graph(1)->setName("filtered");
     plot->graph(2)->setName("setTemperature");
+
+    videoReceiver_ = std::make_unique<VideoReceiver>(ui->video_frame);
+    connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage);
 
     network_ = std::make_unique<Network>();
     network_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()),
@@ -239,6 +243,15 @@ void MainWindow::drawFunc(const QVector<double>& parameters)
     auto y_data = QVector<double>(std::begin(data.first), std::end(data.second));
 
     plot->graph(2)->addData(x_data, y_data);
+}
+
+void MainWindow::receiveImage(const QPixmap& image)
+{
+    static bool firstCall = true;
+    if(firstCall) {
+        ui->video_frame->resize(image.width(), image.height());
+    }
+    ui->video_frame->setPixmap(image);
 }
 
 void MainWindow::tcpIsConnected()

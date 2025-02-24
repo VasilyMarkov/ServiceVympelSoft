@@ -129,3 +129,5 @@ QHostAddress Network::getOwnIp(const QHostAddress& referenceIp) {
     }
     return QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString());
 }
+
+
