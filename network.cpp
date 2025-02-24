@@ -107,11 +107,9 @@ bool isInSameSubnet(const QHostAddress& ip, const QHostAddress& netmask, const Q
     quint32 netmaskAddress = netmask.toIPv4Address();
     quint32 referenceIpAddress = referenceIp.toIPv4Address();
 
-    // Apply the netmask to both IP addresses
     quint32 network1 = ipAddress & netmaskAddress;
     quint32 network2 = referenceIpAddress & netmaskAddress;
 
-    // Compare the network parts of both IP addresses
     return network1 == network2;
 }
 
