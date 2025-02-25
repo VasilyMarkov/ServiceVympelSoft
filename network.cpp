@@ -17,8 +17,6 @@ Network::Network(QObject *parent):
     connect(&tcp_socket_, &QTcpSocket::readyRead, this, &Network::tcpHandler);
     connect(&tcp_socket_, &QTcpSocket::connected, this, &Network::tcpConnectHandler);
     connect(&tcp_socket_, &QTcpSocket::disconnected, this, &Network::tcpDisconnectHandler);
-//    connect(&disconnectTimer_, &QTimer::timeout, this, &Network::tcpDisconnect);
-//    disconnectTimer_.setInterval(5000);
 }
 
 void Network::processPendingDatagrams()
@@ -74,7 +72,7 @@ void Network::createTcpConnection()
 
     tcp_socket_.connectToHost(cameraIpAdress_, ConfigReader::getInstance().get("network", "cameraTcpPort").toInt());
     ownIpAdress_ = getOwnIp(cameraIpAdress_);
-    setReceiverParameters(ownIpAdress_,
+    setReceiverParameters(QHostAddress(ownIpAdress_.toIPv4Address()),
         ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
     setSenderParameters(QHostAddress(cameraIpAdress_.toIPv4Address()),
         ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());

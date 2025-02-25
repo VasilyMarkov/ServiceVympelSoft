@@ -6,7 +6,6 @@
 #include <QTcpSocket>
 #include <QTcpServer>
 #include <QJsonDocument>
-#include <QTimer>
 
 constexpr int RESERVE_PORTS = 1024;
 
@@ -37,7 +36,6 @@ private:
     void sendPortData(const QByteArray&);
     QHostAddress getOwnIp(const QHostAddress&);
 private:
-    QTimer disconnectTimer_;
     bool firstConnected_ = true;
     QUdpSocket socket_;
     std::unique_ptr<QUdpSocket> cameraDiscoverSocket_;
