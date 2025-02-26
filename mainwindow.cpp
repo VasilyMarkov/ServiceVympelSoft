@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent):
     plot->graph(2)->setPen(QPen(QColor(255, 255, 75), 2));
     plot->graph(0)->setName("brightness");
     plot->graph(1)->setName("filtered");
-    plot->graph(2)->setName("setTemperature");
+    plot->graph(2)->setName("temprature");
 
     videoReceiver_ = std::make_unique<VideoReceiver>(ui->video_frame);
     connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage);
@@ -55,6 +55,9 @@ MainWindow::MainWindow(QWidget *parent):
     connect(this, &MainWindow::sendFuncParameters, this, &MainWindow::drawFunc);
 
 
+    plot->graph(0)->rescaleAxes(); // Adjusts primary x and y axes
+    plot->graph(1)->rescaleAxes(); // Adjusts primary x and y axes
+    plot->graph(2)->rescaleAxes(true); // Only expands existing ranges for secondary axes
     ui->temperatureRate->setText(QString::number(0.0));
 //    auto data = applyFunc({2, 4, 0.5, 1, 0.0, 0.0, 0.3, 0.0}, 0, 8, 1000, gaussPolyVal);
 
@@ -86,6 +89,7 @@ void MainWindow::receiveData(const QJsonDocument& json)
     if(commands_ == Commands::work) {
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
+        plot->graph(2)->addData(sample_, temperature);
         sample_++;
 
         getFuncParameters(json);
@@ -94,6 +98,7 @@ void MainWindow::receiveData(const QJsonDocument& json)
         sample_ = 0;
         plot->graph(0)->setData(QVector<double>(), QVector<double>());
         plot->graph(1)->setData(QVector<double>(), QVector<double>());
+        plot->graph(2)->setData(QVector<double>(), QVector<double>());
     }
     plot->replot();
 }
@@ -151,6 +156,9 @@ void MainWindow::mouseWheel()
     else if (plot->yAxis->selectedParts().testFlag(QCPAxis::spAxis)) {
         plot->axisRect()->setRangeZoom(plot->yAxis->orientation());
     }
+    else if (plot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis)) {
+        plot->axisRect()->setRangeZoom(plot->yAxis2->orientation());
+    }
     else
       plot->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
 }
@@ -173,8 +181,18 @@ void MainWindow::setupPlot(QCustomPlot* plot)
     plot->yAxis->grid()->setSubGridVisible(true);
     plot->xAxis->grid()->setZeroLinePen(Qt::NoPen);
     plot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
-    plot->xAxis->setUpperEnding(QCPLineEnding::esSpikeArrow);
-    plot->yAxis->setUpperEnding(QCPLineEnding::esSpikeArrow);
+//    plot->xAxis->setUpperEnding(QCPLineEnding::esSpikeArrow);
+//    plot->yAxis->setUpperEnding(QCPLineEnding::esSpikeArrow);
+
+    plot->yAxis2->setVisible(true);
+    plot->yAxis2->setBasePen(QPen(Qt::white, 1));
+    plot->yAxis2->setTickPen(QPen(Qt::white, 1));
+    plot->yAxis2->setSubTickPen(QPen(Qt::white, 1));
+    plot->yAxis2->setTickLabelColor(Qt::white);
+    plot->yAxis2->setRange(-60, 60);
+//    plot->yAxis2->setTickLabels(true);
+
+    plot->rescaleAxes();
 
     QLinearGradient plotGradient;
     plotGradient.setStart(0, 0);
@@ -188,7 +206,8 @@ void MainWindow::setupPlot(QCustomPlot* plot)
     axisRectGradient.setColorAt(0, QColor(80, 80, 80));
     axisRectGradient.setColorAt(1, QColor(30, 30, 30));
     plot->axisRect()->setBackground(axisRectGradient);
-    plot->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(100);
+//    plot->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(100);
+//    plot->axisRect()->axis(QCPAxis::atLeft, 0)->setPadding(100);
 
     plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
@@ -262,4 +281,12 @@ void MainWindow::tcpIsDisconnected()
     ui->camera_connection_status->setText("Camera is disconnected");
 }
 
+
+
+void MainWindow::on_closeAppButton_clicked()
+{
+    QJsonObject json;
+    json["commands"] = static_cast<int>(Commands::close);
+    emit sendData(QJsonDocument(json));
+}
 

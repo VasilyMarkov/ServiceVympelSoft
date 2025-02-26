@@ -32,6 +32,7 @@ enum class Commands {
     halt,
     work,
     setRateTemprature,
+    close
 };
 
 const QString normal_state{"{border: 1px solid #8f8f8f; \
@@ -166,6 +167,8 @@ private slots:
 
     void drawFunc(const QVector<double>&);
     void receiveImage(const QPixmap&);
+    void on_closeAppButton_clicked();
+
 signals:
     void sendData(const QJsonDocument&);
     void sendFuncParameters(const QVector<double>&);
