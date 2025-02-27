@@ -75,7 +75,7 @@ inline double gaussPolyVal(const std::vector<double>& coeffs, double x) noexcept
     double mean = coeffs[1];
     double var = coeffs[2];
     double z = polyval(std::vector<double>(std::next(std::begin(coeffs), 3), std::end(coeffs)),(x-mean));
-    return a*std::exp(-(0.5*z)/(var*var));
+    return a*std::exp(-(0.5*z*z)/(var*var));
 }
 
 template<typename Func>
@@ -134,7 +134,7 @@ private slots:
 
                 if (!qimg.isNull()) {
 
-                    emit sendImage(QPixmap::fromImage(qimg));
+//                    emit sendImage(QPixmap::fromImage(qimg));
                 } else {
                     qWarning() << "Failed to create QImage from frame.";
                 }
@@ -187,7 +187,9 @@ private:
     QStringList pythonCommandArguments_;
     std::unique_ptr<Network> network_;
     std::unique_ptr<VideoReceiver> videoReceiver_;
+    std::vector<double> data_;
     QCustomPlot* plot;
+    QCustomPlot* finalPlot;
     int sample_ = 0;
     Commands commands_;
     bool firstCallEvaluateParameters_ = true;

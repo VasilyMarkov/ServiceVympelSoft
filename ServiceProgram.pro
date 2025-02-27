@@ -5,12 +5,14 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20
 
 SOURCES += \
+    logger.cpp \
     main.cpp \
     mainwindow.cpp \
     network.cpp \
     qcustomplot.cpp
 HEADERS += \
     configreader.h \
+    logger.h \
     mainwindow.h \
     network.h \
     qcustomplot.h \

@@ -13,7 +13,7 @@
 #include <math.h>
 #include <map>
 #include "configreader.h"
-
+#include "logger.h"
 
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent):
 
     showMaximized();
     plot = ui->plot;
+    finalPlot = ui->finalPlot;
     connect(plot, &QCustomPlot::mouseWheel, this, &MainWindow::mouseWheel);
     setupPlot(plot);
     plot->yAxis->setRange(-VALUE_SIZE, 5*VALUE_SIZE);
@@ -43,14 +44,18 @@ MainWindow::MainWindow(QWidget *parent):
     plot->graph(1)->setName("filtered");
     plot->graph(2)->setName("temprature");
 
+    setupPlot(finalPlot);
+
     videoReceiver_ = std::make_unique<VideoReceiver>(ui->video_frame);
-    connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage);
+    connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage, Qt::QueuedConnection);
 
     network_ = std::make_unique<Network>();
 
     connect(network_.get(), &Network::sendData, this, &MainWindow::receiveData);
     connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::tcpIsConnected);
     connect(network_.get(), &Network::tcpIsDisconnected, this, &MainWindow::tcpIsDisconnected);
+    connect(network_.get(), &Network::sendFuncCoeffs, this, &MainWindow::drawFunc);
+
     connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData);
     connect(this, &MainWindow::sendFuncParameters, this, &MainWindow::drawFunc);
 
@@ -59,12 +64,6 @@ MainWindow::MainWindow(QWidget *parent):
     plot->graph(1)->rescaleAxes(); // Adjusts primary x and y axes
     plot->graph(2)->rescaleAxes(true); // Only expands existing ranges for secondary axes
     ui->temperatureRate->setText(QString::number(0.0));
-//    auto data = applyFunc({2, 4, 0.5, 1, 0.0, 0.0, 0.3, 0.0}, 0, 8, 1000, gaussPolyVal);
-
-//    auto x_data = QVector<double>::fromStdVector(data.first);
-//    auto y_data = QVector<double>::fromStdVector(data.second);
-
-//    plot->graph(2)->addData(x_data, y_data);
 }
 
 MainWindow::~MainWindow()
@@ -87,9 +86,10 @@ void MainWindow::receiveData(const QJsonDocument& json)
         ui->ble_status->setStyleSheet(QString("QLabel")+crictical_state);
     }
     if(commands_ == Commands::work) {
+        data_.push_back(filtered);
         plot->graph(0)->addData(sample_, brightness);
         plot->graph(1)->addData(sample_, filtered);
-        plot->graph(2)->addData(sample_, temperature);
+//        plot->graph(2)->addData(sample_, temperature);
         sample_++;
 
         getFuncParameters(json);
@@ -98,7 +98,7 @@ void MainWindow::receiveData(const QJsonDocument& json)
         sample_ = 0;
         plot->graph(0)->setData(QVector<double>(), QVector<double>());
         plot->graph(1)->setData(QVector<double>(), QVector<double>());
-        plot->graph(2)->setData(QVector<double>(), QVector<double>());
+//        plot->graph(2)->setData(QVector<double>(), QVector<double>());
     }
     plot->replot();
 }
@@ -224,6 +224,9 @@ void MainWindow::on_stopCV_clicked()
     json["commands"] = static_cast<int>(Commands::halt);
     commands_ = Commands::halt;
     emit sendData(QJsonDocument(json));
+//    Logger::getInstance().log(data_);
+    data_.clear();
+
 }
 
 void MainWindow::on_startCV_clicked()
@@ -231,6 +234,7 @@ void MainWindow::on_startCV_clicked()
     QJsonObject json;
     json["commands"] = static_cast<int>(Commands::work);
     commands_ = Commands::work;
+//    Logger::getInstance().createLog();
     emit sendData(QJsonDocument(json));
 }
 
@@ -245,19 +249,41 @@ void MainWindow::on_setRate_button_clicked()
 void MainWindow::drawFunc(const QVector<double>& parameters)
 {
     if(parameters.isEmpty()) return;
+    qDebug() << parameters;
+    auto normalize = [](QVector<double>& data){
+        auto maxVal = *std::max_element(std::begin(data), std::end(data));
+        auto minVal = *std::min_element(std::begin(data), std::end(data));
+        std::transform(std::begin(data), std::end(data), std::begin(data), [minVal](auto val){return val - minVal;});
+        std::transform(std::begin(data), std::end(data), std::begin(data), [maxVal](auto val){return val / maxVal;});
+        return data;
+    };
 
     auto data = applyFunc(
         std::vector<double>(std::begin(parameters), std::end(parameters)),
         0,
-        sample_,
-        sample_*4,
+        data_.size(),
+        data_.size(),
         gaussPolyVal
     );
 
     auto x_data = QVector<double>(std::begin(data.first), std::end(data.first));
-    auto y_data = QVector<double>(std::begin(data.first), std::end(data.second));
+    auto y_data = QVector<double>(std::begin(data.second), std::end(data.second));
 
-    plot->graph(2)->addData(x_data, y_data);
+    auto refData = QVector<double>(std::begin(data_), std::end(data_));
+    auto normalizeRefData = normalize(refData);
+
+    finalPlot->yAxis->setRange(-1, 1);
+    finalPlot->xAxis->setRange(0, data_.size());
+    finalPlot->addGraph();
+    finalPlot->addGraph();
+
+    finalPlot->graph(0)->setPen(QPen(QColor(93, 149, 246), 2));
+    finalPlot->graph(1)->setPen(QPen(QColor(255, 255, 75), 2));
+
+    finalPlot->graph(0)->addData(x_data, normalizeRefData);
+    finalPlot->graph(1)->addData(x_data, y_data);
+
+    finalPlot->replot();
 }
 
 void MainWindow::receiveImage(const QPixmap& image)
@@ -280,8 +306,6 @@ void MainWindow::tcpIsDisconnected()
     ui->camera_connection_status->setStyleSheet(QString("QLabel")+crictical_state);
     ui->camera_connection_status->setText("Camera is disconnected");
 }
-
-
 
 void MainWindow::on_closeAppButton_clicked()
 {

@@ -23,9 +23,9 @@ signals:
     void tcpIsConnected();
     void tcpIsDisconnected();
     void ready();
+    void sendFuncCoeffs(const QVector<double>&);
 private slots:
     void receivePortData();
-    void tcpHandler();
     void createTcpConnection();
     void processPendingDatagrams();
     void tcpConnectHandler();
@@ -35,11 +35,14 @@ public slots:
 private:
     void sendPortData(const QByteArray&);
     QHostAddress getOwnIp(const QHostAddress&);
+    void newTcpConnection();
+    void handlingIncomingTcpPackets();
 private:
     bool firstConnected_ = true;
     QUdpSocket socket_;
     std::unique_ptr<QUdpSocket> cameraDiscoverSocket_;
     QTcpSocket tcp_socket_;
+    QTcpServer tcpServer_;
     QHostAddress senderAddr_ = QHostAddress::LocalHost;
     quint16 senderPort_ = 1024;
     quint16 cameraDiscoverPort_;

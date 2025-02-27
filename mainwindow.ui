@@ -16,9 +16,12 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="8,1,4">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="1">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="3,2">
       <item>
        <widget class="QCustomPlot" name="plot" native="true"/>
+      </item>
+      <item>
+       <widget class="QCustomPlot" name="finalPlot" native="true"/>
       </item>
      </layout>
     </item>

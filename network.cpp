@@ -14,7 +14,7 @@ Network::Network(QObject *parent):
 
     connect(cameraDiscoverSocket_.get(), &QUdpSocket::readyRead, this, &Network::processPendingDatagrams);
     connect(&socket_, &QUdpSocket::readyRead, this, &Network::receivePortData);
-    connect(&tcp_socket_, &QTcpSocket::readyRead, this, &Network::tcpHandler);
+    connect(&tcp_socket_, &QTcpSocket::readyRead, this, &Network::handlingIncomingTcpPackets);
     connect(&tcp_socket_, &QTcpSocket::connected, this, &Network::tcpConnectHandler);
     connect(&tcp_socket_, &QTcpSocket::disconnected, this, &Network::tcpDisconnectHandler);
 }
@@ -61,9 +61,25 @@ void Network::receivePortData()
     emit sendData(QJsonDocument::fromJson(datagram, nullptr));
 }
 
-void Network::tcpHandler()
+void Network::handlingIncomingTcpPackets()
 {
+    auto data = tcp_socket_.readAll();
+    auto jsonDoc = QJsonDocument::fromJson(data, nullptr);
 
+    QVector<double> coefficients;
+    if (jsonDoc.isArray()) {
+        QJsonArray jsonArray = jsonDoc.array();
+        for (const auto& value : jsonArray) {
+            if (value.isDouble()) {
+                coefficients.push_back(value.toDouble());
+            }
+        }
+
+    } else {
+        qDebug() << "The QJsonDocument does not contain an array.";
+    }
+
+    emit sendFuncCoeffs(coefficients);
 }
 
 void Network::createTcpConnection()
@@ -130,5 +146,3 @@ QHostAddress Network::getOwnIp(const QHostAddress& referenceIp) {
     }
     return QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString());
 }
-
-
