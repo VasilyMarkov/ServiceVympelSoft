@@ -134,7 +134,7 @@ private slots:
 
                 if (!qimg.isNull()) {
 
-//                    emit sendImage(QPixmap::fromImage(qimg));
+                    emit sendImage(QPixmap::fromImage(qimg));
                 } else {
                     qWarning() << "Failed to create QImage from frame.";
                 }
@@ -180,7 +180,7 @@ private:
     void setupPlot(QCustomPlot*);
     void modeEval(EventType);
     void getFuncParameters(const QJsonDocument&);
-
+    size_t findEndPoint(const QVector<double>&);
 private:
     Ui::MainWindow *ui;
     QProcess process_;
@@ -188,10 +188,11 @@ private:
     std::unique_ptr<Network> network_;
     std::unique_ptr<VideoReceiver> videoReceiver_;
     std::vector<double> data_;
+    std::vector<double> temp_data_;
     QCustomPlot* plot;
     QCustomPlot* finalPlot;
     int sample_ = 0;
-    Commands commands_;
+    Commands commands_ = Commands::no_commands;
     bool firstCallEvaluateParameters_ = true;
 };
 #endif // MAINWINDOW_H

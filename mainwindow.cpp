@@ -85,19 +85,20 @@ void MainWindow::receiveData(const QJsonDocument& json)
     if(bleStatus == 0) {
         ui->ble_status->setStyleSheet(QString("QLabel")+crictical_state);
     }
+    plot->graph(0)->addData(sample_, brightness);
+    plot->graph(1)->addData(sample_, filtered);
+    plot->graph(2)->addData(sample_, temperature*VALUE_SIZE/60);
+    data_.push_back(filtered);
+    temp_data_.push_back(temperature);
+    sample_++;
     if(commands_ == Commands::work) {
-        data_.push_back(filtered);
-        plot->graph(0)->addData(sample_, brightness);
-        plot->graph(1)->addData(sample_, filtered);
-//        plot->graph(2)->addData(sample_, temperature);
-        sample_++;
-
+//        data_.push_back(filtered);
         getFuncParameters(json);
     }
-    else {
+    else if(commands_ == Commands::halt) {
         sample_ = 0;
-        plot->graph(0)->setData(QVector<double>(), QVector<double>());
-        plot->graph(1)->setData(QVector<double>(), QVector<double>());
+//        plot->graph(0)->setData(QVector<double>(), QVector<double>());
+//        plot->graph(1)->setData(QVector<double>(), QVector<double>());
 //        plot->graph(2)->setData(QVector<double>(), QVector<double>());
     }
     plot->replot();
@@ -146,6 +147,16 @@ void MainWindow::getFuncParameters(const QJsonDocument& json)
         emit sendFuncParameters(parameters);
     }
     emit sendFuncParameters({});
+}
+
+size_t MainWindow::findEndPoint(const QVector<double>& data)
+{
+    auto posMax = std::max_element(std::begin(data), std::end(data));
+    auto max = *posMax;
+    return std::distance(std::begin(data), std::find_if(posMax, std::end(data), [max](auto val){
+        if(val < 0.95*max) return true;
+        return false;
+    }));
 }
 
 void MainWindow::mouseWheel()
@@ -271,6 +282,8 @@ void MainWindow::drawFunc(const QVector<double>& parameters)
 
     auto refData = QVector<double>(std::begin(data_), std::end(data_));
     auto normalizeRefData = normalize(refData);
+
+    qDebug() << "End point: " << findEndPoint(y_data);
 
     finalPlot->yAxis->setRange(-1, 1);
     finalPlot->xAxis->setRange(0, data_.size());
