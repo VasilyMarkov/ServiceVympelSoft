@@ -133,7 +133,6 @@ private slots:
                 QImage qimg(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
 
                 if (!qimg.isNull()) {
-
                     emit sendImage(QPixmap::fromImage(qimg));
                 } else {
                     qWarning() << "Failed to create QImage from frame.";
@@ -191,6 +190,8 @@ private:
     std::vector<double> temp_data_;
     QCustomPlot* plot;
     QCustomPlot* finalPlot;
+    QThread videoReceiverThread_;
+    QThread networkThread_;
     int sample_ = 0;
     Commands commands_ = Commands::no_commands;
     bool firstCallEvaluateParameters_ = true;

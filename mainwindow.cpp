@@ -17,6 +17,8 @@
 
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
+//constexpr double VALUE_SIZE = 10;
+
 
 MainWindow::MainWindow(QWidget *parent):
     QMainWindow(parent),
@@ -47,16 +49,22 @@ MainWindow::MainWindow(QWidget *parent):
     setupPlot(finalPlot);
 
     videoReceiver_ = std::make_unique<VideoReceiver>(ui->video_frame);
+
+    videoReceiver_->moveToThread(&videoReceiverThread_);
+    videoReceiverThread_.start();
+
     connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage, Qt::QueuedConnection);
 
     network_ = std::make_unique<Network>();
+    network_->moveToThread(&networkThread_);
+    networkThread_.start();
 
-    connect(network_.get(), &Network::sendData, this, &MainWindow::receiveData);
-    connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::tcpIsConnected);
-    connect(network_.get(), &Network::tcpIsDisconnected, this, &MainWindow::tcpIsDisconnected);
-    connect(network_.get(), &Network::sendFuncCoeffs, this, &MainWindow::drawFunc);
+    connect(network_.get(), &Network::sendData, this, &MainWindow::receiveData, Qt::QueuedConnection);
+    connect(network_.get(), &Network::tcpIsConnected, this, &MainWindow::tcpIsConnected, Qt::QueuedConnection);
+    connect(network_.get(), &Network::tcpIsDisconnected, this, &MainWindow::tcpIsDisconnected, Qt::QueuedConnection);
+    connect(network_.get(), &Network::sendFuncCoeffs, this, &MainWindow::drawFunc, Qt::QueuedConnection);
 
-    connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData);
+    connect(this, &MainWindow::sendData, network_.get(), &Network::receiveData, Qt::QueuedConnection);
     connect(this, &MainWindow::sendFuncParameters, this, &MainWindow::drawFunc);
 
 
@@ -92,14 +100,10 @@ void MainWindow::receiveData(const QJsonDocument& json)
     temp_data_.push_back(temperature);
     sample_++;
     if(commands_ == Commands::work) {
-//        data_.push_back(filtered);
         getFuncParameters(json);
     }
     else if(commands_ == Commands::halt) {
         sample_ = 0;
-//        plot->graph(0)->setData(QVector<double>(), QVector<double>());
-//        plot->graph(1)->setData(QVector<double>(), QVector<double>());
-//        plot->graph(2)->setData(QVector<double>(), QVector<double>());
     }
     plot->replot();
 }
