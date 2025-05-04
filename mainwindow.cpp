@@ -261,6 +261,14 @@ void MainWindow::on_setRate_button_clicked()
     emit sendData(QJsonDocument(json));
 }
 
+QVector<double> derivative(const QVector<double>& data) {
+    QVector<double> result(data);
+    for (int i = 0; i < data.size()-1; ++i) {
+        result[i] = (data[i+1] - data[i])*60;
+    }
+    return result;
+}
+
 void MainWindow::drawFunc(const QVector<double>& parameters)
 {
     if(parameters.isEmpty()) return;
@@ -287,18 +295,21 @@ void MainWindow::drawFunc(const QVector<double>& parameters)
     auto refData = QVector<double>(std::begin(data_), std::end(data_));
     auto normalizeRefData = normalize(refData);
 
-    qDebug() << "End point: " << findEndPoint(y_data);
+    auto der = derivative(y_data);
 
     finalPlot->yAxis->setRange(-1, 1);
     finalPlot->xAxis->setRange(0, data_.size());
     finalPlot->addGraph();
     finalPlot->addGraph();
+    finalPlot->addGraph();
 
     finalPlot->graph(0)->setPen(QPen(QColor(93, 149, 246), 2));
     finalPlot->graph(1)->setPen(QPen(QColor(255, 255, 75), 2));
+    finalPlot->graph(2)->setPen(QPen(QColor(253, 114, 114), 2));
 
     finalPlot->graph(0)->addData(x_data, normalizeRefData);
     finalPlot->graph(1)->addData(x_data, y_data);
+    finalPlot->graph(2)->addData(x_data, der);
 
     finalPlot->replot();
 }
