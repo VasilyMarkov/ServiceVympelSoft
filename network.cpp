@@ -119,6 +119,11 @@ QHostAddress Network::getCameraIp() const
     return cameraIpAdress_;
 }
 
+void Network::resetTcpConnection()
+{
+    cameraIsConnected_ = false;
+}
+
 bool isInSameSubnet(const QHostAddress& ip, const QHostAddress& netmask, const QHostAddress& referenceIp) {
     quint32 ipAddress = ip.toIPv4Address();
     quint32 netmaskAddress = netmask.toIPv4Address();

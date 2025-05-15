@@ -72,6 +72,14 @@ MainWindow::MainWindow(QWidget *parent):
     plot->graph(1)->rescaleAxes(); // Adjusts primary x and y axes
     plot->graph(2)->rescaleAxes(true); // Only expands existing ranges for secondary axes
     ui->temperatureRate->setText(QString::number(0.0));
+
+//    connect(&test_timer_, &QTimer::timeout, [this](){
+//        plot->graph(0)->addData(sample_, (float)sample_/5);
+//        ++sample_;
+//        plot->replot();
+//    });
+
+//    test_timer_.start(200);
 }
 
 MainWindow::~MainWindow()
@@ -239,9 +247,14 @@ void MainWindow::on_stopCV_clicked()
     json["commands"] = static_cast<int>(Commands::halt);
     commands_ = Commands::halt;
     emit sendData(QJsonDocument(json));
-//    Logger::getInstance().log(data_);
-    data_.clear();
 
+    plot->graph(0)->data().data()->clear();
+    plot->graph(1)->data().data()->clear();
+    plot->graph(2)->data().data()->clear();
+
+    finalPlot->replot();
+    data_.clear();
+    sample_ = 0;
 }
 
 void MainWindow::on_startCV_clicked()
@@ -249,7 +262,6 @@ void MainWindow::on_startCV_clicked()
     QJsonObject json;
     json["commands"] = static_cast<int>(Commands::work);
     commands_ = Commands::work;
-//    Logger::getInstance().createLog();
     emit sendData(QJsonDocument(json));
 }
 
@@ -319,6 +331,7 @@ void MainWindow::receiveImage(const QPixmap& image)
     static bool firstCall = true;
     if(firstCall) {
         ui->video_frame->resize(image.width(), image.height());
+        firstCall = false;
     }
     ui->video_frame->setPixmap(image);
 }
@@ -340,5 +353,23 @@ void MainWindow::on_closeAppButton_clicked()
     QJsonObject json;
     json["commands"] = static_cast<int>(Commands::close);
     emit sendData(QJsonDocument(json));
+}
+
+
+void MainWindow::on_reset_button_clicked()
+{
+    QJsonObject json;
+    json["commands"] = static_cast<int>(Commands::reset);
+    commands_ = Commands::halt;
+    emit sendData(QJsonDocument(json));
+
+    plot->graph(0)->data().data()->clear();
+    plot->graph(1)->data().data()->clear();
+    plot->graph(2)->data().data()->clear();
+
+    finalPlot->replot();
+    data_.clear();
+    sample_ = 0;
+    qDebug() << "Reset";
 }
 

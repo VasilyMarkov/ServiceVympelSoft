@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QImage>
 #include <QPixmap>
+#include <QTimer>
 #include <deque>
 #include <cmath>
 #include <iostream>
@@ -32,7 +33,8 @@ enum class Commands {
     halt,
     work,
     setRateTemprature,
-    close
+    close,
+    reset
 };
 
 const QString normal_state{"{border: 1px solid #8f8f8f; \
@@ -168,6 +170,8 @@ private slots:
     void receiveImage(const QPixmap&);
     void on_closeAppButton_clicked();
 
+    void on_reset_button_clicked();
+
 signals:
     void sendData(const QJsonDocument&);
     void sendFuncParameters(const QVector<double>&);
@@ -195,5 +199,6 @@ private:
     int sample_ = 0;
     Commands commands_ = Commands::no_commands;
     bool firstCallEvaluateParameters_ = true;
+    QTimer test_timer_;
 };
 #endif // MAINWINDOW_H

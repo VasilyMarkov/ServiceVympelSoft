@@ -26,7 +26,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,1,1,2,4,1,1,5,1">
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,1,1,1,2,4,1,1,5,1">
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="0">
@@ -66,6 +66,19 @@
         </property>
         <property name="text">
          <string>Bluetooth status:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="reset_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Reset</string>
         </property>
        </widget>
       </item>

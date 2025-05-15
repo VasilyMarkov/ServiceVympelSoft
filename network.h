@@ -17,6 +17,7 @@ public:
     void setSenderParameters(const QHostAddress&, quint16);
     void setReceiverParameters(const QHostAddress&, quint16);
     QHostAddress getCameraIp() const;
+    void resetTcpConnection();
 signals:
     void sendData(const QJsonDocument&);
     void sendCameraIp(const QHostAddress&);
