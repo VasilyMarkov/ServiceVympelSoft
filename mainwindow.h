@@ -115,9 +115,14 @@ public:
         udpSocket = new QUdpSocket(this);
         udpSocket->bind(QHostAddress::Any, 12345);
         connect(udpSocket, &QUdpSocket::readyRead, this, &VideoReceiver::readDatagram);
+
+        udpSocket1 = new QUdpSocket(this);
+        udpSocket1->bind(QHostAddress::Any, 12346);
+        connect(udpSocket1, &QUdpSocket::readyRead, this, &VideoReceiver::readDatagram1);
     }
 signals:
     void sendImage(const QPixmap&);
+    void sendImage1(const QPixmap&);
 private slots:
     void readDatagram() {
         while (udpSocket->hasPendingDatagrams()) {
@@ -144,9 +149,35 @@ private slots:
             }
         }
     }
+    void readDatagram1() {
+        while (udpSocket1->hasPendingDatagrams()) {
+            QByteArray datagram;
+            datagram.resize(udpSocket1->pendingDatagramSize());
+            udpSocket1->readDatagram(datagram.data(), datagram.size());
+            if(datagram.isEmpty()) return;
+
+            std::vector<uchar> buffer(datagram.begin(), datagram.end());
+            cv::Mat frame = cv::imdecode(buffer, cv::IMREAD_COLOR);
+
+            if (!frame.empty()) {
+                cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+
+                QImage qimg(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
+
+                if (!qimg.isNull()) {
+                    emit sendImage1(QPixmap::fromImage(qimg));
+                } else {
+                    qWarning() << "Failed to create QImage from frame.";
+                }
+            } else {
+                qWarning() << "Received empty or invalid frame.";
+            }
+        }
+    }
 
 private:
     QUdpSocket *udpSocket;
+    QUdpSocket *udpSocket1;
     QLabel *label;
 };
 
@@ -168,6 +199,8 @@ private slots:
 
     void drawFunc(const QVector<double>&);
     void receiveImage(const QPixmap&);
+    void receiveImage1(const QPixmap&);
+
     void on_closeAppButton_clicked();
 
     void on_reset_button_clicked();

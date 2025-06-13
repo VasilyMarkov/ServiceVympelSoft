@@ -54,6 +54,8 @@ MainWindow::MainWindow(QWidget *parent):
     videoReceiverThread_.start();
 
     connect(videoReceiver_.get(), &VideoReceiver::sendImage, this, &MainWindow::receiveImage, Qt::QueuedConnection);
+    connect(videoReceiver_.get(), &VideoReceiver::sendImage1, this, &MainWindow::receiveImage1, Qt::QueuedConnection);
+
 
     network_ = std::make_unique<Network>();
     network_->moveToThread(&networkThread_);
@@ -335,6 +337,17 @@ void MainWindow::receiveImage(const QPixmap& image)
     }
     ui->video_frame->setPixmap(image);
 }
+
+void MainWindow::receiveImage1(const QPixmap& image)
+{
+    static bool firstCall = true;
+    if(firstCall) {
+        ui->video_frame1->resize(image.width(), image.height());
+        firstCall = false;
+    }
+    ui->video_frame1->setPixmap(image);
+}
+
 
 void MainWindow::tcpIsConnected()
 {
